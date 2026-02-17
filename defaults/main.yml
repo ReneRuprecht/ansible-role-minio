@@ -1,1 +1,32 @@
 ---
+minio_user: minio
+minio_group: minio
+
+minio_create_data_dirs: false
+minio_data_dirs: []
+
+minio_binary_url: "https://dl.min.io/server/minio/release/linux-amd64/minio"
+minio_binary_path: "/usr/local/bin/minio"
+minio_client_binary_url: "https://dl.min.io/aistor/mc/release/linux-amd64/mc"
+minio_client_binary_path: "/usr/local/bin/mc"
+
+minio_install_server: true
+minio_install_client: true
+
+minio_api_url: ""
+minio_api_user: ""
+minio_api_password: ""
+
+minio_console_enabled: true
+minio_console_port: 9001
+
+minio_systemd_env_path: "/etc/default/minio"
+
+minio_users: []
+  # - name: bucket1_writer
+  #   password: changeme
+  #   policy_type: write
+  #   buckets:
+  #     - name: bucket1
+  #       state: present
+  #       versioning: true

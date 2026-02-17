@@ -1,0 +1,35 @@
+---
+- name: Check if bucket exists
+  remote_user: "{{ minio_user }}"
+  ansible.builtin.command:
+    cmd: mc ls minio/{{ bucket.name }}
+  register: bucket_check
+  changed_when: false
+  ignore_errors: true
+  no_log: "{{ minio_no_log | default('true') }}"
+
+- name: Create bucket
+  remote_user: "{{ minio_user }}"
+  ansible.builtin.command:
+    cmd: mc mb minio/{{ bucket.name }}
+  register: create_bucket
+  changed_when: "'created successfully' in create_bucket.stdout"
+  when:
+    - "'does not exist' in bucket_check.stderr"
+    - bucket.state == "present"
+
+- name: Update versioning
+  remote_user: "{{ minio_user }}"
+  ansible.builtin.command:
+    cmd: mc version enable minio/{{ bucket.name }}
+  changed_when: false
+  when: bucket.state == "present"
+
+- name: Delete bucket
+  remote_user: "{{ minio_user }}"
+  ansible.builtin.command:
+    cmd: mc rb minio/{{ bucket.name }}
+  changed_when: false
+  when:
+    - "'does not exist' not in bucket_check.stderr"
+    - bucket.state == "absent"

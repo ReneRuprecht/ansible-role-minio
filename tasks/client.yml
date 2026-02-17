@@ -1,0 +1,40 @@
+---
+- name: Check mc binary
+  become: true
+  ansible.builtin.stat:
+    path: "{{ minio_client_binary_path }}"
+  register: mc_binary_stat
+
+- name: Download mc binary
+  become: true
+  when: not mc_binary_stat.stat.exists
+  ansible.builtin.get_url:
+    url: "{{ minio_client_binary_url }}"
+    dest: "{{ minio_client_binary_path }}"
+    mode: "0755"
+
+- name: Ensure mc directory exists
+  become: true
+  ansible.builtin.file:
+    path: "/home/{{ minio_user }}/.mc"
+    state: directory
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+    mode: "0700"
+
+- name: Set mc alias
+  remote_user: "{{ minio_user }}"
+  changed_when: false
+  ansible.builtin.command:
+    cmd: >
+      mc alias set minio {{ minio_api_url }}
+      {{ minio_api_user }} {{ minio_api_password }}
+
+- name: Copy minio config
+  become: true
+  ansible.builtin.template:
+    src: minio_mc_config.json.j2
+    dest: "/home/{{ minio_user }}/.mc/config.json"
+    mode: "0600"
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"

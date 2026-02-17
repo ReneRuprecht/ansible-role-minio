@@ -1,0 +1,35 @@
+---
+- name: Add user to minio
+  changed_when: false
+  ansible.builtin.shell:
+    cmd: >
+      mc admin user add minio {{ user.name }} {{ user.password }}
+  no_log: "{{ minio_no_log | default('true') }}"
+
+- name: Create policy
+  when:
+    - user.buckets | length > 0
+  block:
+    - name: Copy minio policy for each user
+      ansible.builtin.template:
+        src: minio_policy.json.j2
+        dest: "/tmp/{{ user.name }}-policy.json"
+        mode: "0644"
+      no_log: "{{ minio_no_log | default('true') }}"
+
+    - name: Upload policy
+      changed_when: false
+      ansible.builtin.shell: >
+        mc admin policy create minio {{ user.name }}-policy /tmp/{{ user.name }}-policy.json
+      no_log: "{{ minio_no_log | default('true') }}"
+
+    - name: Attach policy to user
+      changed_when: false
+      ansible.builtin.shell: >
+        mc admin policy attach minio {{ user.name }}-policy --user {{ user.name }}
+      no_log: "{{ minio_no_log | default('true') }}"
+
+    - name: Remove temp policy files
+      ansible.builtin.file:
+        path: "/tmp/{{ user.name }}-policy.json"
+        state: absent

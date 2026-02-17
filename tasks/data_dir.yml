@@ -1,0 +1,10 @@
+---
+- name: Create data dir {{ data_dir }}
+  become: true
+  ansible.builtin.file:
+    path: "{{ data_dir }}"
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+    mode: "0755"
+    state: directory
+    recurse: true

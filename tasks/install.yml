@@ -1,0 +1,53 @@
+---
+- name: Create group
+  become: true
+  ansible.builtin.group:
+    name: "{{ minio_group }}"
+    system: true
+    state: present
+
+- name: Create user
+  become: true
+  ansible.builtin.user:
+    name: "{{ minio_user }}"
+    system: true
+    shell: /bin/bash
+    create_home: true
+    home: "/home/{{ minio_user }}"
+    state: present
+
+- name: Check minio binary
+  become: true
+  ansible.builtin.stat:
+    path: "{{ minio_binary_path }}"
+  register: minio_binary_stat
+
+- name: Download Minio
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ minio_binary_url }}"
+    dest: "{{ minio_binary_path }}"
+    mode: "0755"
+  when: not minio_binary_stat.stat.exists
+
+- name: Copy envs
+  become: true
+  ansible.builtin.template:
+    src: minio.env.j2
+    dest: "/etc/default/minio"
+    mode: '0600'
+
+- name: Copy service
+  become: true
+  ansible.builtin.template:
+    src: minio.service.j2
+    dest: /etc/systemd/system/minio.service
+    mode: '0644'
+
+- name: Start minio
+  become: true
+  ansible.builtin.systemd:
+    name: minio
+    state: started
+    enabled: true
+    daemon_reload: true

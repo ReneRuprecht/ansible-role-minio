@@ -1,1 +1,53 @@
 ---
+
+- name: Create data dir
+  when:
+    - minio_create_data_dirs
+    - minio_install_server
+  ansible.builtin.include_tasks:
+    file: data_dir.yml
+  loop: "{{ minio_data_dirs }}"
+  loop_control:
+    loop_var: data_dir
+
+- name: Install minio
+  when: minio_install_server
+  ansible.builtin.include_tasks:
+    file: install.yml
+
+- name: Install Client
+  when:
+    - minio_install_client
+    - minio_api_url != ""
+    - minio_api_user != ""
+    - minio_api_password != ""
+  ansible.builtin.include_tasks:
+    file: client.yml
+
+- name: Create user
+  when:
+    - minio_install_server
+    - minio_users | length > 0
+  ansible.builtin.include_tasks:
+    file: user.yml
+  loop: "{{ minio_users }}"
+  loop_control:
+    loop_var: user
+  vars:
+    buckets: "{{ user.buckets | default([]) }}"
+    policy_type: "{{ user.policy_type | default('read') }}"
+  no_log: "{{ minio_no_log | default('true') }}"
+
+- name: Create bucket
+  when:
+    - minio_install_server
+    - minio_users | default([])
+      | selectattr('buckets', 'defined')
+      | map(attribute='buckets')
+      | flatten
+      | length > 0
+  ansible.builtin.include_tasks:
+    file: bucket.yml
+  loop: "{{ minio_users | map(attribute='buckets') | flatten }}"
+  loop_control:
+    loop_var: bucket

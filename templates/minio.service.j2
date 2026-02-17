@@ -1,0 +1,17 @@
+[Unit]
+Description=MinIO
+Documentation=https://docs.min.io
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ minio_user }}
+Group={{ minio_group }}
+EnvironmentFile={{ minio_systemd_env_path }}
+ExecStart=/usr/local/bin/minio server
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
