@@ -10,6 +10,10 @@
   loop_control:
     loop_var: data_dir
 
+- name: Create user and group
+  ansible.builtin.include_tasks:
+    file: setup.yml
+
 - name: Install minio
   when: minio_install_server
   ansible.builtin.include_tasks:
@@ -48,6 +52,12 @@
       | length > 0
   ansible.builtin.include_tasks:
     file: bucket.yml
-  loop: "{{ minio_users | map(attribute='buckets') | flatten }}"
+  loop: >
+    {{
+      minio_users | default([])
+      | selectattr('buckets', 'defined')
+      | map(attribute='buckets')
+      | flatten
+    }}
   loop_control:
     loop_var: bucket
