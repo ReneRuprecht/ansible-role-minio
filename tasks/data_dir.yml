@@ -5,6 +5,5 @@
     path: "{{ data_dir }}"
     owner: "{{ minio_user }}"
     group: "{{ minio_group }}"
-    mode: "0755"
+    mode: "0700"
     state: directory
-    recurse: true

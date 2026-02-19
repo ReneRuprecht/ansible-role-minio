@@ -16,3 +16,11 @@
     home: "/home/{{ minio_user }}"
     state: present
 
+- name: Ensure mc directory exists
+  become: true
+  ansible.builtin.file:
+    path: "/home/{{ minio_user }}/.mc"
+    state: directory
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+    mode: "0700"

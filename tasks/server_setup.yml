@@ -1,0 +1,34 @@
+---
+- name: Create user
+  when:
+    - minio_install_server
+    - minio_users | length > 0
+  ansible.builtin.include_tasks:
+    file: user.yml
+  loop: "{{ minio_users }}"
+  loop_control:
+    loop_var: user
+  vars:
+    buckets: "{{ user.buckets | default([]) }}"
+    policy_type: "{{ user.policy_type | default('read') }}"
+  no_log: "{{ minio_no_log | default('true') }}"
+
+- name: Create bucket
+  when:
+    - minio_install_server
+    - minio_users | default([])
+      | selectattr('buckets', 'defined')
+      | map(attribute='buckets')
+      | flatten
+      | length > 0
+  ansible.builtin.include_tasks:
+    file: bucket.yml
+  loop: >
+    {{
+      minio_users | default([])
+      | selectattr('buckets', 'defined')
+      | map(attribute='buckets')
+      | flatten
+    }}
+  loop_control:
+    loop_var: bucket

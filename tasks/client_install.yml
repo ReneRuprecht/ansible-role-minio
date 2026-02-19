@@ -1,0 +1,24 @@
+---
+- name: Check mc binary
+  become: true
+  ansible.builtin.stat:
+    path: "{{ minio_client_binary_path }}"
+  register: mc_binary_stat
+
+- name: Download mc binary
+  become: true
+  when: not mc_binary_stat.stat.exists
+  ansible.builtin.get_url:
+    url: "{{ minio_client_binary_url }}"
+    dest: "{{ minio_client_binary_path }}"
+    mode: "0755"
+
+- name: Set mc alias
+  become: true
+  environment:
+    HOME: "/home/{{ minio_user }}"
+  changed_when: false
+  ansible.builtin.command:
+    cmd: >
+      mc alias set {{ minio_alias }} {{ minio_url }}
+      {{ minio_root_access_key }} {{ minio_root_secret_key }}
