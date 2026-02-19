@@ -34,6 +34,16 @@
   ansible.builtin.import_tasks:
     file: server_setup.yml
 
+- name: Setup site replication
+  run_once: true
+  become: true
+  environment:
+    HOME: "/home/{{ minio_user }}"
+  when:
+    - minio_replication_enabled
+  ansible.builtin.import_tasks:
+    file: site_replication.yml
+
 - name: Fix ownership
   become: true
   ansible.builtin.file:

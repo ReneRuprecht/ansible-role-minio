@@ -32,3 +32,11 @@ minio_users: []
   #     - name: bucket1
   #       state: present
   #       versioning: true
+
+minio_replication_enabled: false
+minio_replication_prune: false
+minio_replication_sites: []
+# - name: minio-b
+#   url: https://minio-b.local
+#   access_key: user
+#   secret_key: changeme

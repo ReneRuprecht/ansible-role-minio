@@ -1,0 +1,50 @@
+---
+- name: Configure remote mc aliases
+  command: >
+    mc alias set {{ item.name }}
+    {{ item.url }}
+    {{ item.access_key }}
+    {{ item.secret_key }}
+  loop: "{{ minio_replication_sites }}"
+  changed_when: false
+  register: remote_alias
+  failed_when: "'successfully' not in remote_alias.stdout"
+
+- name: Get replication status
+  ansible.builtin.command:
+    cmd: mc admin replicate info {{ minio_alias }} --json
+  register: replication_status
+  changed_when: false
+  failed_when: false
+
+- name: Extract existing replication peers
+  ansible.builtin.set_fact:
+    existing_sites: "{{ (replication_status.stdout | from_json).sites | default([]) | map(attribute='name') | list }}"
+
+- name: Remove obsolete replication sites
+  ansible.builtin.command: >
+    mc admin replicate remove
+    {{ minio_alias }}
+    {{ item }}
+    --force
+  loop: "{{ existing_sites }}"
+  when:
+    - item not in (minio_replication_sites | map(attribute='name') | list)
+    - item != minio_alias
+    - minio_replication_prune
+  register: remove_remote_site
+  changed_when: '"successfully" in remove_remote_site.stdout'
+
+- name: Add missing replication sites
+  ansible.builtin.command: >
+    mc admin replicate add
+    {{ minio_alias }}
+    {{ item.name }}
+  loop: "{{ minio_replication_sites }}"
+  when: >
+    replication_status.rc != 0 or
+    (replication_status.stdout is not search(item.name)) and
+    (minio_replication_sites is defined and
+    minio_replication_sites | length > 0)
+  register: add_remote_site
+  changed_when: '"successfully" in add_remote_site.stdout'
